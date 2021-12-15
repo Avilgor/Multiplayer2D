@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(NetworkEntity))]
 public class TankController : MonoBehaviour
 {
     public GameObject shell;
@@ -12,64 +13,63 @@ public class TankController : MonoBehaviour
     public float shootCD = 2.0f;
     public Transform cannon;
     public Transform shootPoint;
-    public NetworkEntity entity;
+    NetworkEntity entity;
 
     bool shootReady;
-    Queue<ClientActions> tankActions;
-    //Rigidbody2D rb;
+    Rigidbody2D rb;
+    float mov = 0;
+    float rot = 0;
 
     private void Awake()
     {
-        //rb = GetComponent<Rigidbody2D>();
-        tankActions = new Queue<ClientActions>();
+        rb = GetComponent<Rigidbody2D>();
+        entity = GetComponent<NetworkEntity>();
     }
 
     void Start()
     {
-        locked = false;
         shootReady = true;
-        if (entity.clientControlled) StartCoroutine(PlayerActionsBundle());
+        //if (entity.clientControlled) StartCoroutine(PlayerActionsBundle());
     }
     
     void Update()
     {
         if (locked) return;
         
-        float mov = 0;
-        float rot = 0;
+        mov = 0;
+        rot = 0;
 
         if (Input.GetKey(KeyCode.W))
         {
-            mov = speed;
-            tankActions.Enqueue(ClientActions.ACTION_MOVE_FRONT);
+            //mov = speed/100;
+            GLOBALS.playerActions.NewAction(entity.netID,ClientActions.ACTION_MOVE_FRONT);
         }
 
         if (Input.GetKey(KeyCode.S))
         {
-            mov = -speed;
-            tankActions.Enqueue(ClientActions.ACTION_MOVE_BACK);
+            //mov = -speed/100;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_MOVE_BACK);
         }
 
         if (Input.GetKey(KeyCode.A))
         {
-            rot = turnSpeed;
-            tankActions.Enqueue(ClientActions.ACTION_ROTATE_LEFT);
+            //rot = turnSpeed/100;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_ROTATE_LEFT);
         }
 
         if (Input.GetKey(KeyCode.D))
         {
-            rot = -turnSpeed;
-            tankActions.Enqueue(ClientActions.ACTION_ROTATE_RIGHT);
+            //rot = -turnSpeed/100;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_ROTATE_RIGHT);
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            tankActions.Enqueue(ClientActions.ACTION_SHOOT);
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_SHOOT);
         }
-
-        //if (mov != 0) rb.MovePosition(transform.position + (transform.up * mov * Time.deltaTime));
-        transform.position = transform.position + (transform.up * mov * Time.deltaTime);
-        if (rot != 0) transform.Rotate(new Vector3(0,0, rot * Time.deltaTime));
+        
+        //if (mov != 0) transform.position = transform.position + (transform.up * mov);
+        //if (rot != 0) transform.Rotate(new Vector3(0,0, rot));
 
         //MouseLook
         Vector3 vec = Camera.main.ScreenToWorldPoint(Input.mousePosition) - cannon.position;
@@ -78,13 +78,13 @@ public class TankController : MonoBehaviour
 
         if (sign < 0)
         {
-            cannon.Rotate(new Vector3(0, 0, cannonSpeed * Time.deltaTime));
-            tankActions.Enqueue(ClientActions.ACTION_ROTATE_LEFT);
+            //cannon.Rotate(new Vector3(0, 0, cannonSpeed/100));
+            //GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_CANNON_ROTATE_LEFT);
         }
         else if (sign > 0)
         {
-            cannon.Rotate(new Vector3(0, 0, -cannonSpeed * Time.deltaTime));
-            tankActions.Enqueue(ClientActions.ACTION_CANNON_ROTATE_RIGHT);
+            //cannon.Rotate(new Vector3(0, 0, -cannonSpeed/100));
+            //GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_CANNON_ROTATE_RIGHT);
         }
 
         /*Vector3 diff = Camera.main.ScreenToWorldPoint(Input.mousePosition) - cannon.position;
@@ -93,22 +93,31 @@ public class TankController : MonoBehaviour
         cannon.rotation = Quaternion.Euler(0f, 0f, rot_z - 90);*/                       
     }
 
+    public void FixedUpdate()
+    {
+        if (mov != 0)
+        {
+            Vector2 res = transform.up * mov;
+            rb.position += res;
+        }
+        if (rot != 0) rb.rotation += rot;             
+    }
+
     private void ServerShoot()
     {
         if (shootReady)
         {        
             shootReady = false;
             StartCoroutine(ShootReload());
-
+            GLOBALS.networkGO.SpawnGo(1,215,shootPoint.position,shootPoint.rotation);
             //Particles FX
 
         }
     }
 
     public void ClientShoot()
-    {
+    {       
         //Particles FX
-
     }
 
     public Transform GetShootPoint()
@@ -118,28 +127,31 @@ public class TankController : MonoBehaviour
 
     public void PerformAction(ClientActions action)
     {
+        Vector2 res;
         switch (action)
         {
             case ClientActions.ACTION_SHOOT:
                 ServerShoot();
                 break;
             case ClientActions.ACTION_ROTATE_RIGHT:
-                transform.Rotate(new Vector3(0, 0, -turnSpeed * Time.deltaTime));
+                rb.rotation += (-turnSpeed / 100);
                 break;
             case ClientActions.ACTION_ROTATE_LEFT:
-                transform.Rotate(new Vector3(0, 0, turnSpeed * Time.deltaTime));
+                rb.rotation += (turnSpeed / 100);
                 break;
             case ClientActions.ACTION_MOVE_FRONT:
-                transform.position = transform.position + (transform.up * speed * Time.deltaTime);
+                res = transform.up * speed / 100;
+                rb.position += res;
                 break;
             case ClientActions.ACTION_MOVE_BACK:
-                transform.position = transform.position + (transform.up * -speed * Time.deltaTime);
+                res = transform.up * -speed / 100;
+                rb.position += res;
                 break;
             case ClientActions.ACTION_CANNON_ROTATE_RIGHT:
-                cannon.Rotate(new Vector3(0, 0, -cannonSpeed * Time.deltaTime));
+                cannon.Rotate(new Vector3(0, 0, -cannonSpeed/100));
                 break;
             case ClientActions.ACTION_CANNON_ROTATE_LEFT:
-                cannon.Rotate(new Vector3(0, 0, cannonSpeed * Time.deltaTime));
+                cannon.Rotate(new Vector3(0, 0, cannonSpeed/100));
                 break;
             default:
                 break;
@@ -169,26 +181,27 @@ public class TankController : MonoBehaviour
         shootReady = true;
     }
 
-    IEnumerator PlayerActionsBundle()
+    /*IEnumerator PlayerActionsBundle()
     {
-        //Each 30ms pack requested player actions and send
-        //This will by nature add 30ms ping
-        bool data = false;
-        Packet pak = null;
+        //Each 20ms pack requested player actions and send
+        Packet pak;
+        Queue<ClientActions> act;
+        
+        yield return new WaitForSeconds(0.02f);
         if (tankActions.Count > 0)
         {
-            data = true;
             pak = new Packet();
-            byte i = (byte)tankActions.Count;
-            pak.Write(i);//Save amount of actions
+            act = new Queue<ClientActions>(tankActions);
+            tankActions.Clear();
+            int i = act.Count;
+            pak.Write((byte)i);
             for (int a = 0; a < i; a++)
             {
-                pak.Write((byte)tankActions.Dequeue());
+                pak.Write((byte)act.Dequeue());
             }
-            //Save sended state
-            entity.UpdateLastState(transform.position,transform.rotation,transform.localScale);
+            //Save sended state            
+            GLOBALS.clientGame.SendActionsBundle(pak);
         }
-        yield return new WaitForSeconds(0.03f);
-        if (data) GLOBALS.clientGame.SendActionsBundle(pak);
-    }
+        StartCoroutine(PlayerActionsBundle());
+    }*/
 }

@@ -3,43 +3,73 @@ using System.Collections.Generic;
 using System;
 using System.Text;
 using UnityEngine;
+using System.Net;
 
 //Header
 //1. enum MSG type --> byte
 //2. type ID --> uint
-public class Packet : IDisposable
+public class Packet 
 {
-    private bool disposed = false;
+    public bool esential;
+    public DateTime timestamp;
+    public IPEndPoint sender = null;
+    public IPEndPoint remote = null;
+    public uint pakID = 10;
+    //public bool disposed = false;
     private List<byte> buffer;
     private byte[] readableBuffer;
     private int readPos;
 
     //Creates a new packet without an ID
-    public Packet()
+    public Packet(bool es = false)
     {
         buffer = new List<byte>();
         readPos = 0;
+        timestamp = DateTime.Now;
+        pakID = 0;
+        esential = es;
     }
 
     //Creates a new packet with a given ID
-    public Packet(int _id)
+    public Packet(int _id,bool es = false)
     {
         buffer = new List<byte>(); 
         readPos = 0;
-
-        Write(_id); 
+        timestamp = DateTime.Now;
+        pakID = 0;
+        Write(_id);
+        esential = es;
     }
 
     //Creates a packet with starting data
-    public Packet(byte[] _data)
+    public Packet(byte[] _data, bool es = false)
     {
         buffer = new List<byte>(); 
         readPos = 0;
-
+        timestamp = DateTime.Now;
+        pakID = 0;
         SetBytes(_data);
+        esential = es;
     }
 
-    protected virtual void Dispose(bool _disposing)
+    public Packet(byte[] _data,IPEndPoint remote,uint id = 0, bool es = false)
+    {
+        timestamp = DateTime.Now;
+        sender = remote;
+        pakID = id;
+        buffer = new List<byte>();
+        readPos = 0;
+        SetBytes(_data);
+        esential = es;
+    }
+
+    public uint ReadID()
+    {
+        if(readableBuffer.Length > 0) pakID = ReadUInt();
+        return pakID;
+    }
+
+    /*protected virtual void Dispose(bool _disposing)
     {
         if (!disposed)
         {
@@ -52,13 +82,13 @@ public class Packet : IDisposable
 
             disposed = true;
         }
-    }
+    }*/
 
-    public void Dispose()
+    /*public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
-    }
+    }*/
 
     public void SetBytes(byte[] _data)
     {
@@ -79,8 +109,21 @@ public class Packet : IDisposable
         buffer.InsertRange(0, BitConverter.GetBytes(id));      
     }
 
+    //Adds the header
+    public void RemoveHeader()
+    {
+        buffer.RemoveRange(0,5);
+        readableBuffer = buffer.ToArray();
+    }
+
     //Inserts the given int at the start of the buffer
     public void InsertInt(int _value)
+    {
+        buffer.InsertRange(0, BitConverter.GetBytes(_value));
+    }
+
+    //Inserts the given byte at the start of the buffer
+    public void InsertByte(byte _value)
     {
         buffer.InsertRange(0, BitConverter.GetBytes(_value));
     }
@@ -90,6 +133,12 @@ public class Packet : IDisposable
     {
         readableBuffer = buffer.ToArray();
         return readableBuffer;
+    }
+
+    public string ToBitArray()
+    {
+        readableBuffer = buffer.ToArray();
+        return BitConverter.ToString(readableBuffer);
     }
 
     //Gets the length of the content

@@ -6,29 +6,24 @@ using TMPro;
 
 public class Menu : MonoBehaviour
 {
-    public GameObject hostScreen,joinScreen;
-    public TMP_InputField usernameHost, usernameJoin,joinIp;
+    public GameObject joinScreen;
+    public TMP_InputField usernameJoin,joinIp;
+
+    private void Awake()
+    {
+        Application.targetFrameRate = 60;
+    }
 
     void Start()
     {
+        usernameJoin.text = "player";
+        joinIp.text = "127.0.0.1";
         joinScreen.SetActive(false);
-        hostScreen.SetActive(false);
     }
 
     public void CloseGame()
     {
         Application.Quit();
-    }
-
-
-    public void OpenHost()
-    {
-        hostScreen.SetActive(true);
-    }
-
-    public void CloseHost()
-    {
-        hostScreen.SetActive(false);
     }
 
     public void OpenJoin()
@@ -42,13 +37,8 @@ public class Menu : MonoBehaviour
     }
 
     public void StartHost()
-    {
-        if (!string.IsNullOrWhiteSpace(usernameHost.text))
-        {
-            GLOBALS.isclient = false;
-            GLOBALS.username = usernameHost.text;
-            SceneManager.LoadScene(1);
-        }
+    {      
+        SceneManager.LoadScene(1);
     }
 
     public void StartJoin()
@@ -57,8 +47,7 @@ public class Menu : MonoBehaviour
         {
             GLOBALS.IP = joinIp.text;
             GLOBALS.username = usernameJoin.text;
-            GLOBALS.isclient = true;
-            SceneManager.LoadScene(1);
+            SceneManager.LoadScene(2);
         }
     }
 }

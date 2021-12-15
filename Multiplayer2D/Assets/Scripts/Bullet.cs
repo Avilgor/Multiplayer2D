@@ -14,7 +14,7 @@ public class Bullet : MonoBehaviour
 
     void Update()
     {
-        transform.position = transform.position + (transform.up * shellSpeed * Time.deltaTime);
+        transform.position = transform.position + (transform.up * (shellSpeed/100));
     }
 
     public void DestroyBullet()
