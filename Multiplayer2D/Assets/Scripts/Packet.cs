@@ -69,27 +69,6 @@ public class Packet
         return pakID;
     }
 
-    /*protected virtual void Dispose(bool _disposing)
-    {
-        if (!disposed)
-        {
-            if (_disposing)
-            {
-                buffer = null;
-                readableBuffer = null;
-                readPos = 0;
-            }
-
-            disposed = true;
-        }
-    }*/
-
-    /*public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }*/
-
     public void SetBytes(byte[] _data)
     {
         Write(_data);
@@ -135,7 +114,7 @@ public class Packet
         return readableBuffer;
     }
 
-    public string ToBitArray()
+    public string ToStringBitArray()
     {
         readableBuffer = buffer.ToArray();
         return BitConverter.ToString(readableBuffer);
@@ -159,6 +138,12 @@ public class Packet
         buffer.Clear();
         readableBuffer = null;
         readPos = 0;       
+    }
+
+    public bool HasBufer()
+    {
+        if (readableBuffer != null && readableBuffer.Length > 0) return true;
+        else return false;
     }
 
     #region Write
@@ -256,6 +241,13 @@ public class Packet
         Write(_value.z);
         Write(_value.w);
     }
+
+    public void Write(BitArray _value)
+    {
+        byte[] array = new byte[_value.Length/8];
+        _value.CopyTo(array,0);
+        buffer.AddRange(array);
+    }
     #endregion
 
     #region Read Data
@@ -317,6 +309,24 @@ public class Packet
         else
         {
             throw new Exception("Could not read value of type 'ushort'!");
+        }
+    }
+
+    public BitArray ReadBits(int bitsNum,bool movePos = true)
+    {
+        if (buffer.Count > readPos)
+        {
+            byte[] array = new byte[bitsNum/8];
+            for (int i = 0;i<array.Length;i++)
+            {
+                array[i] = readableBuffer[readPos + i];
+            }
+            if (movePos) readPos += bitsNum/8;
+            return new BitArray(array);
+        }
+        else
+        {
+            throw new Exception("Could not read value of type 'short'!");
         }
     }
 

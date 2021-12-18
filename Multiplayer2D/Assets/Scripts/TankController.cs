@@ -16,92 +16,175 @@ public class TankController : MonoBehaviour
     NetworkEntity entity;
 
     bool shootReady;
-    Rigidbody2D rb;
-    float mov = 0;
-    float rot = 0;
+    bool[] inputs;
+    //Rigidbody2D rb;
+    //float mov = 0;
+    //float rot = 0;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        //rb = GetComponent<Rigidbody2D>();
         entity = GetComponent<NetworkEntity>();
     }
 
     void Start()
     {
         shootReady = true;
-        //if (entity.clientControlled) StartCoroutine(PlayerActionsBundle());
     }
-    
+
     void Update()
     {
         if (locked) return;
-        
-        mov = 0;
-        rot = 0;
+        bool gotInput = false;
+        inputs = new bool[16];
+        //mov = 0;
+        //rot = 0;
 
         if (Input.GetKey(KeyCode.W))
         {
-            //mov = speed/100;
-            GLOBALS.playerActions.NewAction(entity.netID,ClientActions.ACTION_MOVE_FRONT);
+            //transform.position = transform.position + (transform.up * (speed / 100));
+            //Vector2 res = transform.up * (speed / 100);
+            //rb.position += res;
+            inputs[(int)PlayerInputsENUM.INPUT_MOVE_FRONT] = true;
+            gotInput = true;
         }
 
         if (Input.GetKey(KeyCode.S))
         {
-            //mov = -speed/100;
-            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_MOVE_BACK);
+            //transform.position = transform.position + (transform.up * (-speed / 100));
+            //Vector2 res = transform.up * (-speed / 100);
+            //rb.position += res;
+            inputs[(int)PlayerInputsENUM.INPUT_MOVE_BACK] = true;
+            gotInput = true;
         }
 
         if (Input.GetKey(KeyCode.A))
         {
-            //rot = turnSpeed/100;
-            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_ROTATE_LEFT);
+            //transform.Rotate(new Vector3(0, 0, turnSpeed / 100));
+            //rb.rotation += turnSpeed / 100;
+            inputs[(int)PlayerInputsENUM.INPUT_ROTATE_LEFT] = true;
+            gotInput = true;
         }
 
         if (Input.GetKey(KeyCode.D))
         {
-            //rot = -turnSpeed/100;
-            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_ROTATE_RIGHT);
+            //transform.Rotate(new Vector3(0, 0, -turnSpeed / 100));
+            //rb.rotation += -turnSpeed / 100;
+            inputs[(int)PlayerInputsENUM.INPUT_ROTATE_RIGHT] = true;
+            gotInput = true;
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_SHOOT);
+            inputs[(int)PlayerInputsENUM.INPUT_SHOOT] = true;
+            gotInput = true;
         }
-        
+
+        if (Input.GetKey(KeyCode.K))
+        {
+            //cannon.Rotate(new Vector3(0, 0, cannonSpeed / 100));
+            inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT] = true;
+            gotInput = true;
+        }
+
+        if (Input.GetKey(KeyCode.L))
+        {
+            //cannon.Rotate(new Vector3(0, 0, -cannonSpeed / 100));
+            inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT] = true;
+            gotInput = true;
+        }
+
         //if (mov != 0) transform.position = transform.position + (transform.up * mov);
         //if (rot != 0) transform.Rotate(new Vector3(0,0, rot));
 
         //MouseLook
-        Vector3 vec = Camera.main.ScreenToWorldPoint(Input.mousePosition) - cannon.position;
-        Vector2 vec90 = new Vector2(-vec.y, vec.x);
-        float sign = (Vector2.Dot(vec90, cannon.up) < 0) ? -1.0f : 1.0f;
+        //var dir = Input.mousePosition - Camera.main.WorldToScreenPoint(cannon.position);
+        //float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        //cannon.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
 
-        if (sign < 0)
+        //Vector3 vec = Camera.main.ScreenToWorldPoint(Input.mousePosition) - cannon.position;
+        //Vector2 vec90 = new Vector2(-vec.y, vec.x);
+        //float sign = (Vector2.Dot(vec90, cannon.up) < 0) ? -1.0f : 1.0f;
+
+        /*if (sign < 0)
         {
-            //cannon.Rotate(new Vector3(0, 0, cannonSpeed/100));
-            //GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_CANNON_ROTATE_LEFT);
+            //cannon.Rotate(new Vector3(0, 0, cannonSpeed / 100));
+            inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT] = true;
+            gotInput = true;
+            //GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_CANNON_ROTATE_LEFT, transform.position, transform.rotation);
         }
         else if (sign > 0)
         {
-            //cannon.Rotate(new Vector3(0, 0, -cannonSpeed/100));
-            //GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_CANNON_ROTATE_RIGHT);
-        }
+            //cannon.Rotate(new Vector3(0, 0, -cannonSpeed / 100));
+            inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT] = true;
+            gotInput = true;
+        }*/
 
-        /*Vector3 diff = Camera.main.ScreenToWorldPoint(Input.mousePosition) - cannon.position;
-        diff.Normalize();
-        float rot_z = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
-        cannon.rotation = Quaternion.Euler(0f, 0f, rot_z - 90);*/                       
+        if (gotInput) GLOBALS.playerActions.NewInput(entity.netID, inputs, transform.position, transform.rotation);
     }
 
-    public void FixedUpdate()
+    public void SetCanonID(uint id)
     {
+        cannon.GetComponent<NetworkEntity>().SetEntity(id);
+    }
+
+    public uint GetCannonID()
+    {
+        return cannon.GetComponent<NetworkEntity>().netID;
+    }
+
+    public Transform GetCannonTrans()
+    {
+        return cannon.transform;
+    }
+
+    public bool Canshoot()
+    {
+        return shootReady;
+    }
+
+    /*public Rigidbody2D GetRigidbody()
+    {
+        return rb;
+    }*/
+
+    /*public void FixedUpdate()
+    {
+        if (locked) return;
+
+        if (Input.GetKey(KeyCode.W))
+        {
+            Vector2 res = transform.up * (speed / 100);
+            rb.position += res;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_MOVE_FRONT, transform.position, transform.rotation);
+        }
+
+        if (Input.GetKey(KeyCode.S))
+        {
+            Vector2 res = transform.up * (-speed / 100);
+            rb.position += res;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_MOVE_BACK, transform.position, transform.rotation);
+        }
+
+        if (Input.GetKey(KeyCode.A))
+        {
+            rb.rotation += turnSpeed / 100;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_ROTATE_LEFT, transform.position, transform.rotation);
+        }
+
+        if (Input.GetKey(KeyCode.D))
+        {
+            rb.rotation += -turnSpeed / 100;
+            GLOBALS.playerActions.NewAction(entity.netID, ClientActions.ACTION_ROTATE_RIGHT, transform.position, transform.rotation);
+        }
+
         if (mov != 0)
         {
             Vector2 res = transform.up * mov;
             rb.position += res;
         }
-        if (rot != 0) rb.rotation += rot;             
-    }
+        if (rot != 0) rb.rotation += rot; 
+    }*/
 
     private void ServerShoot()
     {
@@ -109,7 +192,6 @@ public class TankController : MonoBehaviour
         {        
             shootReady = false;
             StartCoroutine(ShootReload());
-            GLOBALS.networkGO.SpawnGo(1,215,shootPoint.position,shootPoint.rotation);
             //Particles FX
 
         }
@@ -118,6 +200,7 @@ public class TankController : MonoBehaviour
     public void ClientShoot()
     {       
         //Particles FX
+
     }
 
     public Transform GetShootPoint()
@@ -125,54 +208,132 @@ public class TankController : MonoBehaviour
         return shootPoint;
     }
 
-    public void PerformAction(ClientActions action)
+    public void PerformAction(PlayerInputsENUM input)
     {
-        Vector2 res;
-        switch (action)
+        //Vector2 res;
+        switch (input)
         {
-            case ClientActions.ACTION_SHOOT:
+            case PlayerInputsENUM.INPUT_SHOOT:
                 ServerShoot();
                 break;
-            case ClientActions.ACTION_ROTATE_RIGHT:
-                rb.rotation += (-turnSpeed / 100);
+            case PlayerInputsENUM.INPUT_ROTATE_RIGHT:
+                transform.Rotate(new Vector3(0, 0, -turnSpeed / 100));
+                //rb.rotation += (-turnSpeed / 100);
                 break;
-            case ClientActions.ACTION_ROTATE_LEFT:
-                rb.rotation += (turnSpeed / 100);
+            case PlayerInputsENUM.INPUT_ROTATE_LEFT:
+                transform.Rotate(new Vector3(0, 0, turnSpeed / 100));
+                //rb.rotation += (turnSpeed / 100);
                 break;
-            case ClientActions.ACTION_MOVE_FRONT:
-                res = transform.up * speed / 100;
-                rb.position += res;
+            case PlayerInputsENUM.INPUT_MOVE_FRONT:
+                transform.position = transform.position + (transform.up * (speed / 100));
+                //res = transform.up * speed / 100;
+                //rb.position += res;
                 break;
-            case ClientActions.ACTION_MOVE_BACK:
-                res = transform.up * -speed / 100;
-                rb.position += res;
+            case PlayerInputsENUM.INPUT_MOVE_BACK:
+                transform.position = transform.position + (transform.up * (-speed / 100));
+                //res = transform.up * -speed / 100;
+                //rb.position += res;
                 break;
-            case ClientActions.ACTION_CANNON_ROTATE_RIGHT:
-                cannon.Rotate(new Vector3(0, 0, -cannonSpeed/100));
+            case PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT:
+                cannon.Rotate(new Vector3(0, 0, -cannonSpeed / 100));
                 break;
-            case ClientActions.ACTION_CANNON_ROTATE_LEFT:
-                cannon.Rotate(new Vector3(0, 0, cannonSpeed/100));
+            case PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT:
+                cannon.Rotate(new Vector3(0, 0, cannonSpeed / 100));
                 break;
             default:
                 break;
         }
     }
 
+    public void PerformReconciliationAction(bool[] inputs,uint seq)
+    {
+        //Vector2 res;
+        PlayerInputsENUM doInput;
+        for (int i = 0; i < inputs.Length; i++)
+        {
+            if (inputs[i])
+            {
+                doInput = (PlayerInputsENUM)i;
+                switch (doInput)
+                {
+                    case PlayerInputsENUM.INPUT_SHOOT:
 
-    public void ResetTank()
+                        break;
+                    case PlayerInputsENUM.INPUT_ROTATE_RIGHT:
+                        transform.Rotate(new Vector3(0, 0, -turnSpeed / 100));
+                        //rb.rotation += (-turnSpeed / 100);                        
+                        break;
+                    case PlayerInputsENUM.INPUT_ROTATE_LEFT:
+                        transform.Rotate(new Vector3(0, 0, turnSpeed / 100));
+                        //rb.rotation += (turnSpeed / 100);
+                        break;
+                    case PlayerInputsENUM.INPUT_MOVE_FRONT:
+                        transform.position = transform.position + (transform.up * (speed / 100));
+                        //res = transform.up * speed / 100;
+                        //rb.position += res;                      
+                        break;
+                    case PlayerInputsENUM.INPUT_MOVE_BACK:
+                        transform.position = transform.position + (transform.up * (-speed / 100));
+                        //res = transform.up * -speed / 100;
+                        //rb.position += res;
+                        break;
+                    case PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT:
+                        cannon.Rotate(new Vector3(0, 0, -cannonSpeed / 100));                      
+                        break;
+                    case PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT:
+                        cannon.Rotate(new Vector3(0, 0, cannonSpeed / 100));
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
+        GLOBALS.playerActions.ReconciliatedInput(entity.netID,inputs,transform.position,transform.rotation,seq);
+    }
+
+    private void ResetTank(Vector3 pos,Quaternion rot)
     {
         shootReady = true;
-        //Move to new spawnPoint
+        transform.position = pos;
+        transform.rotation = rot;
+    }
+
+    public void TankDestroyed(Vector3 pos, Quaternion rot)
+    {
+        StartCoroutine(MoveTank(pos,rot));
+        //FX
     }
 
     public void TakeDamage()
     {
-        ResetTank();
+        ServerClient player = GLOBALS.serverGame.GetClientByTankID(GetComponent<NetworkEntity>().netID);
+        if (player != null)
+        {
+            player.lifes--;
+            if (player.lifes <= 0)
+            {
+                //Player defeated
+                GLOBALS.serverGame.PlayerDefeated(player.ep);
+            }
+            else
+            {
+                Transform t = GLOBALS.serverGame.GetRandomSpawnPoint();
+                Packet pak = new Packet();
+                pak.Write(GetComponent<NetworkEntity>().netID);
+                pak.Write((byte)ClientActions.ACTION_TANK_DESTROYED);
+                pak.Write(t.position);
+                pak.Write(t.rotation);
+                GLOBALS.serverGame.BroadcastPacket(pak,ClientMSG.CM_CLIENT_ACTION,true);
+                TankDestroyed(t.position,t.rotation);                
+            }
+        }
     }
 
-    public void PlayerDeath()
+    IEnumerator MoveTank(Vector3 pos, Quaternion rot)
     {
-        
+        yield return new WaitForSeconds(2);
+        ResetTank(pos,rot);
     }
 
     IEnumerator ShootReload()
@@ -180,28 +341,4 @@ public class TankController : MonoBehaviour
         yield return new WaitForSeconds(shootCD);
         shootReady = true;
     }
-
-    /*IEnumerator PlayerActionsBundle()
-    {
-        //Each 20ms pack requested player actions and send
-        Packet pak;
-        Queue<ClientActions> act;
-        
-        yield return new WaitForSeconds(0.02f);
-        if (tankActions.Count > 0)
-        {
-            pak = new Packet();
-            act = new Queue<ClientActions>(tankActions);
-            tankActions.Clear();
-            int i = act.Count;
-            pak.Write((byte)i);
-            for (int a = 0; a < i; a++)
-            {
-                pak.Write((byte)act.Dequeue());
-            }
-            //Save sended state            
-            GLOBALS.clientGame.SendActionsBundle(pak);
-        }
-        StartCoroutine(PlayerActionsBundle());
-    }*/
 }

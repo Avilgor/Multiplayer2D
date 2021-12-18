@@ -6,18 +6,40 @@ using UnityEngine;
 public class NetworkEntity : MonoBehaviour
 {
     public uint netID = 0;
-    //public bool hasAuthority;
-    //public bool clientControlled;
+    public bool lockPosition = false, lockRotation = false, lockScale = false;
 
     bool updatePos,updateRot,updateScale;
-    public float interpolationDuration = 0.1f;
+    public float interpolationDuration = 0.2f;
     bool updatingPos, updatingRot, updatingScale;
     Vector3 statePos, stateScale;
     Quaternion stateRot;
 
+    Vector3 startPos,endPos, startScale,endScale;
+    Quaternion startRot,endRot;
+
+    float posTimer, rotTimer, scaleTimer;
+
     void Start()
     {
         SaveState();
+    }
+
+    public void Update()
+    {        
+        if (updatingPos) InterpolatePosition();
+        if (updatingRot) InterpolateRotation();
+        if (updatingScale) InterpolateScale();
+    }
+
+    private void OnDestroy()
+    {
+        GLOBALS.networkGO.RemoveEntity(netID);
+    }
+
+    public void SetEntity(uint id)
+    {
+        netID = id;
+        GLOBALS.networkGO.AddEntity(this);
     }
 
     public void SetPosition(Vector3 pos) { transform.position = pos; }
@@ -26,20 +48,26 @@ public class NetworkEntity : MonoBehaviour
 
     public void UpdatePosition(Vector3 pos)
     {
-        if (updatingPos) StopCoroutine(InterpolatePosition(pos,interpolationDuration));
-        StartCoroutine(InterpolatePosition(pos, interpolationDuration));
+        updatingPos = true;
+        startPos = transform.position;
+        endPos = pos;
+        posTimer = 0;
     }
 
     public void UpdateScale(Vector3 scale)
     {
-        if (updatingScale) StopCoroutine(InterpolateScale(scale, interpolationDuration));
-        StartCoroutine(InterpolateScale(scale, interpolationDuration));
+        updatingScale = true;
+        startScale = transform.localScale;
+        endScale = scale;
+        scaleTimer = 0;
     }
 
     public void UpdateRotation(Quaternion quat)
     {
-        if (updatingRot) StopCoroutine(InterpolateRotation(quat, interpolationDuration));
-        StartCoroutine(InterpolateRotation(quat, interpolationDuration));
+        updatingRot = true;
+        startRot = transform.rotation;
+        endRot = quat;
+        rotTimer = 0;
     }
 
     public void SaveState()
@@ -67,7 +95,6 @@ public class NetworkEntity : MonoBehaviour
             updateScale = true;
             res = true;
         }
-        
         return res;
     }
 
@@ -104,48 +131,47 @@ public class NetworkEntity : MonoBehaviour
         return res;
     }
 
-    IEnumerator InterpolatePosition(Vector3 newPos, float duration)
+    private void InterpolatePosition()
     {
-        updatingPos = true;
-        float time = 0;
-        Vector2 startPos = transform.position;
-        while (time < duration)
+        //Debug.Log("Entity: " + netID.ToString() + " interpolate position.");
+        if (posTimer < interpolationDuration)
         {
-            transform.position = Vector3.Lerp(startPos,newPos,time/duration);
-            time += Time.deltaTime;
-            yield return null;
+            transform.position = Vector3.Lerp(startPos, endPos, posTimer / interpolationDuration);
+            posTimer += Time.deltaTime;
         }
-        transform.position = newPos;
-        updatingPos = false;
+        else
+        {
+            transform.position = endPos;
+            updatingPos = false;
+        }
     }
 
-    IEnumerator InterpolateRotation(Quaternion newRot, float duration)
+    private void InterpolateRotation()
     {
-        updatingRot = true;
-        float time = 0;
-        Quaternion startRot = transform.rotation;
-        while (time < duration)
+        //Debug.Log("Entity: " + netID.ToString() + " interpolate rotation.");
+        if (rotTimer < interpolationDuration)
         {
-            transform.rotation = Quaternion.Lerp(startRot, newRot, time / duration);
-            time += Time.deltaTime;
-            yield return null;
+            transform.rotation = Quaternion.Lerp(startRot, endRot, rotTimer / interpolationDuration);
+            rotTimer += Time.deltaTime;
         }
-        transform.rotation = newRot;
-        updatingRot = false;
+        else
+        {
+            transform.rotation = endRot;
+            updatingRot = false;
+        }
     }
 
-    IEnumerator InterpolateScale(Vector3 newScale, float duration)
+    private void InterpolateScale()
     {
-        updatingScale = true;
-        float time = 0;
-        Vector2 startScale = transform.localScale;
-        while (time < duration)
+        if (scaleTimer < interpolationDuration)
         {
-            transform.localScale = Vector3.Lerp(startScale, newScale, time / duration);
-            time += Time.deltaTime;
-            yield return null;
+            transform.localScale = Vector3.Lerp(startScale, endScale, scaleTimer / interpolationDuration);
+            scaleTimer += Time.deltaTime;
         }
-        transform.localScale = newScale;
-        updatingScale = false;
+        else
+        {
+            transform.localScale = endScale;
+            updatingScale = false;
+        }
     }
 }

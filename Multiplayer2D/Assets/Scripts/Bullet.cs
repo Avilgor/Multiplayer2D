@@ -19,13 +19,17 @@ public class Bullet : MonoBehaviour
 
     public void DestroyBullet()
     {
-        Destroy(gameObject);
+        GLOBALS.networkGO.DestroyGo(GetComponent<NetworkEntity>().netID);
+        Packet pak = new Packet();
+        pak.Write(GetComponent<NetworkEntity>().netID);
+        GLOBALS.serverGame.BroadcastPacket(pak, ClientMSG.CM_DESTROY_GO, true);
     }
 
     public void OnCollisionEnter2D(Collision2D collision)
     {
         if(collision.gameObject.tag == "Tank")
         {
+            collision.gameObject.GetComponent<TankController>().TakeDamage();
             DestroyBullet();
         }
     }
@@ -33,6 +37,6 @@ public class Bullet : MonoBehaviour
     IEnumerator TimeToDie()
     {
         yield return new WaitForSeconds(lifetime);
-        Destroy(gameObject);
+        DestroyBullet();
     }
 }

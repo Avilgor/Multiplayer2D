@@ -99,7 +99,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifetime: 3
-  shellSpeed: 6
+  shellSpeed: 4
 --- !u!114 &7755482923555184502
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -113,8 +113,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   netID: 0
-  hasAuthority: 1
-  interpolationSpeed: 6
+  lockPosition: 0
+  lockRotation: 0
+  lockScale: 0
+  interpolationDuration: 0.1
 --- !u!50 &104010320868311834
 Rigidbody2D:
   serializedVersion: 4
@@ -125,11 +127,11 @@ Rigidbody2D:
   m_GameObject: {fileID: 6697834132121220408}
   m_BodyType: 0
   m_Simulated: 1
-  m_UseFullKinematicContacts: 0
+  m_UseFullKinematicContacts: 1
   m_UseAutoMass: 0
   m_Mass: 1
   m_LinearDrag: 0
-  m_AngularDrag: 0.05
+  m_AngularDrag: 0
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_Interpolate: 0

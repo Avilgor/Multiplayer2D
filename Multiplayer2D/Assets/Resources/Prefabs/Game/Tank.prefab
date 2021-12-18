@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4136443940336710133}
   - component: {fileID: 4136443940336710132}
+  - component: {fileID: 5592557513973370422}
   m_Layer: 3
   m_Name: Cannon
   m_TagString: Untagged
@@ -25,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4136443940336710134}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -1}
+  m_LocalPosition: {x: 0, y: -0.023, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4136443941300423536}
@@ -84,6 +85,23 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &5592557513973370422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4136443940336710134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1797b55b23eb1546bf4a1130d00c740, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  netID: 0
+  lockPosition: 1
+  lockRotation: 0
+  lockScale: 1
+  interpolationDuration: 0.1
 --- !u!1 &4136443940997332300
 GameObject:
   m_ObjectHideFlags: 0
@@ -95,7 +113,7 @@ GameObject:
   - component: {fileID: 4136443940997332299}
   - component: {fileID: 4136443940997332298}
   - component: {fileID: 4136443940997332297}
-  - component: {fileID: 610629281524927763}
+  - component: {fileID: 5647893794740537168}
   m_Layer: 3
   m_Name: Tank
   m_TagString: Tank
@@ -131,10 +149,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   netID: 0
-  hasAuthority: 0
-  clientControlled: 1
-  updateTransform: 1
-  interpolationSpeed: 3
+  lockPosition: 0
+  lockRotation: 0
+  lockScale: 0
+  interpolationDuration: 0.1
 --- !u!114 &4136443940997332297
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -149,14 +167,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shell: {fileID: 2171122898798672391, guid: 2941c249e4d99a242829943eecf0048d, type: 3}
   locked: 0
-  speed: 3
-  turnSpeed: 60
-  cannonSpeed: 50
+  speed: 5
+  turnSpeed: 110
+  cannonSpeed: 100
   shootCD: 2
   cannon: {fileID: 4136443940336710133}
   shootPoint: {fileID: 4136443941300423536}
-  entity: {fileID: 4136443940997332298}
---- !u!50 &610629281524927763
+--- !u!50 &5647893794740537168
 Rigidbody2D:
   serializedVersion: 4
   m_ObjectHideFlags: 0
@@ -166,11 +183,11 @@ Rigidbody2D:
   m_GameObject: {fileID: 4136443940997332300}
   m_BodyType: 0
   m_Simulated: 1
-  m_UseFullKinematicContacts: 0
+  m_UseFullKinematicContacts: 1
   m_UseAutoMass: 0
   m_Mass: 1
   m_LinearDrag: 0
-  m_AngularDrag: 0.05
+  m_AngularDrag: 0
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_Interpolate: 0
@@ -201,7 +218,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4136443941300423537}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.704, z: 0}
+  m_LocalPosition: {x: 0, y: 0.85, z: 0}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_Children: []
   m_Father: {fileID: 4136443940336710133}
@@ -231,8 +248,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4136443941987595228}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.18, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.201, z: 0}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_Children: []
   m_Father: {fileID: 4136443940336710133}
