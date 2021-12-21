@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkEntity))]
 public class TankController : MonoBehaviour
 {
-    public GameObject shell;
+    public AudioClip tankExplosion, tankShot, tankMove, tankIdle;
     public bool locked = false;
     public float speed = 5.0f;
     public float turnSpeed = 1.0f;
@@ -13,10 +13,14 @@ public class TankController : MonoBehaviour
     public float shootCD = 2.0f;
     public Transform cannon;
     public Transform shootPoint;
+    public ParticleSystem explosionFX;
+    public GameObject tankBody;
     NetworkEntity entity;
-
+    AudioSource source;
     bool shootReady;
     bool[] inputs;
+    Vector3 lastPos;
+    bool idle,changeSound;
     //Rigidbody2D rb;
     //float mov = 0;
     //float rot = 0;
@@ -25,15 +29,44 @@ public class TankController : MonoBehaviour
     {
         //rb = GetComponent<Rigidbody2D>();
         entity = GetComponent<NetworkEntity>();
+        source = GetComponent<AudioSource>();
     }
 
     void Start()
     {
+        idle = true;
+        changeSound = false;
         shootReady = true;
     }
 
     void Update()
     {
+        /*if (idle && changeSound)
+        {
+            changeSound = false;
+            source.Stop();
+            source.clip = tankIdle;
+            source.Play();
+        }
+        else if(changeSound)
+        {
+            changeSound = false;
+            source.Stop();
+            source.clip = tankMove;
+            source.Play();
+        }
+
+        if (lastPos == transform.position && !idle)
+        {
+            changeSound = true;
+            idle = true;
+        }
+        else if (idle)
+        { 
+            changeSound = true;
+            idle = false;
+        }*/
+
         if (locked) return;
         bool gotInput = false;
         inputs = new bool[16];
@@ -121,6 +154,7 @@ public class TankController : MonoBehaviour
         }*/
 
         if (gotInput) GLOBALS.playerActions.NewInput(entity.netID, inputs, transform.position, transform.rotation);
+        lastPos = transform.position;
     }
 
     public void SetCanonID(uint id)
@@ -192,8 +226,6 @@ public class TankController : MonoBehaviour
         {        
             shootReady = false;
             StartCoroutine(ShootReload());
-            //Particles FX
-
         }
     }
 
@@ -245,7 +277,7 @@ public class TankController : MonoBehaviour
         }
     }
 
-    public void PerformReconciliationAction(bool[] inputs,uint seq)
+    /*public void PerformReconciliationAction(bool[] inputs,uint seq)
     {
         //Vector2 res;
         PlayerInputsENUM doInput;
@@ -290,26 +322,40 @@ public class TankController : MonoBehaviour
             }
         }
         GLOBALS.playerActions.ReconciliatedInput(entity.netID,inputs,transform.position,transform.rotation,seq);
-    }
+    }*/
 
     private void ResetTank(Vector3 pos,Quaternion rot)
     {
         shootReady = true;
         transform.position = pos;
         transform.rotation = rot;
+        tankBody.SetActive(true);
     }
 
     public void TankDestroyed(Vector3 pos, Quaternion rot)
     {
         StartCoroutine(MoveTank(pos,rot));
         //FX
+        PlayDestroyedFX();
+        explosionFX.Play();
+        tankBody.SetActive(false);
+    }
+
+    public void PlayShotFX()
+    {
+        source.PlayOneShot(tankShot);
+    }
+
+    public void PlayDestroyedFX()
+    {
+        source.PlayOneShot(tankExplosion);   
     }
 
     public void TakeDamage()
     {
         ServerClient player = GLOBALS.serverGame.GetClientByTankID(GetComponent<NetworkEntity>().netID);
         if (player != null)
-        {
+        {          
             player.lifes--;
             if (player.lifes <= 0)
             {
@@ -318,7 +364,8 @@ public class TankController : MonoBehaviour
             }
             else
             {
-                Transform t = GLOBALS.serverGame.GetRandomSpawnPoint();
+                Transform t = GLOBALS.serverGame.GetRandomSpawnPoint(player.lastSpawn);
+                player.lastSpawn = t.position;
                 Packet pak = new Packet();
                 pak.Write(GetComponent<NetworkEntity>().netID);
                 pak.Write((byte)ClientActions.ACTION_TANK_DESTROYED);

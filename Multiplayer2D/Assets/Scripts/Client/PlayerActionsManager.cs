@@ -72,7 +72,7 @@ public class PlayerActionsManager : MonoBehaviour
         unverifiedInputs.Enqueue(info);
     }
 
-    public void VerifyInput(uint seq,Vector3 pos, Quaternion rot)
+    /*public void VerifyInput(uint seq,Vector3 pos, Quaternion rot)
     {
         //bool update = false;
         InputInfo[] array = unverifiedInputs.ToArray();
@@ -81,7 +81,7 @@ public class PlayerActionsManager : MonoBehaviour
         GLOBALS.playerEntity.SetRotation(rot);
         for (int i = 0; i < array.Length; i++)
         {
-            /*if (array[i].GetSequence() == seq)
+            if (array[i].GetSequence() == seq)
             {
                 float res = Mathf.Abs(pos.magnitude - array[i].GetPosition().magnitude);
                 float angle = Mathf.Abs(Quaternion.Angle(rot, array[i].GetRotation()));
@@ -96,13 +96,13 @@ public class PlayerActionsManager : MonoBehaviour
                     update = true;
                 }                
             }
-            else */if (array[i].GetSequence() > seq)
+            else if (array[i].GetSequence() > seq)
             {
-                /*if (update) */GLOBALS.playerTank.PerformReconciliationAction(array[i].GetInputs(),array[i].GetSequence());
+                if (update) GLOBALS.playerTank.PerformReconciliationAction(array[i].GetInputs(),array[i].GetSequence());
                 //else unverifiedActions.Enqueue(array[i]);
             }
         }      
-    }
+    }*/
 
     public void ReceivedActions(Packet pak)
     {
@@ -124,6 +124,7 @@ public class PlayerActionsManager : MonoBehaviour
                     entity.UpdateRotation(tQuat);
                     controller.GetCannonTrans().GetComponent<NetworkEntity>().UpdatePosition(cPos);
                     controller.GetCannonTrans().GetComponent<NetworkEntity>().UpdateRotation(cQuat);
+                    controller.PlayShotFX();
                     GLOBALS.networkGO.SpawnGo(1, bulletID, controller.GetShootPoint().position, controller.GetShootPoint().rotation);
                     break;
 
