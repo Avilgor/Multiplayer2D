@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkEntity))]
 public class TankController : MonoBehaviour
 {
-    public AudioClip tankExplosion, tankShot, tankMove, tankIdle;
+    public AudioClip tankExplosion, tankShot;
     public bool locked = false;
     public float speed = 5.0f;
     public float turnSpeed = 1.0f;
@@ -19,8 +19,6 @@ public class TankController : MonoBehaviour
     AudioSource source;
     bool shootReady;
     bool[] inputs;
-    Vector3 lastPos;
-    bool idle,changeSound;
     //Rigidbody2D rb;
     //float mov = 0;
     //float rot = 0;
@@ -34,39 +32,11 @@ public class TankController : MonoBehaviour
 
     void Start()
     {
-        idle = true;
-        changeSound = false;
         shootReady = true;
     }
 
     void Update()
-    {
-        /*if (idle && changeSound)
-        {
-            changeSound = false;
-            source.Stop();
-            source.clip = tankIdle;
-            source.Play();
-        }
-        else if(changeSound)
-        {
-            changeSound = false;
-            source.Stop();
-            source.clip = tankMove;
-            source.Play();
-        }
-
-        if (lastPos == transform.position && !idle)
-        {
-            changeSound = true;
-            idle = true;
-        }
-        else if (idle)
-        { 
-            changeSound = true;
-            idle = false;
-        }*/
-
+    {       
         if (locked) return;
         bool gotInput = false;
         inputs = new bool[16];
@@ -154,7 +124,6 @@ public class TankController : MonoBehaviour
         }*/
 
         if (gotInput) GLOBALS.playerActions.NewInput(entity.netID, inputs, transform.position, transform.rotation);
-        lastPos = transform.position;
     }
 
     public void SetCanonID(uint id)
