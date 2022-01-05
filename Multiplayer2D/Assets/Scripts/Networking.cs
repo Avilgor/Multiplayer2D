@@ -21,11 +21,11 @@ public interface Networking
 
     //void onPacketReceivedCallback(IAsyncResult result);
 
-    void onConnectionReset(Socket fromAddress);
+    //void onConnectionReset(Socket fromAddress);
 
     void SendPackets();
 
     void onDisconnect();
 
-    void reportError();
+    //void reportError();
 }

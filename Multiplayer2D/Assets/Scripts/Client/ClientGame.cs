@@ -27,11 +27,11 @@ public struct ClientSideData
 
 public class ClientGame : MonoBehaviour
 {
-    public bool jitter = true;
+    /*public bool jitter = true;
     public bool packetLoss = true;
     public int minJitt = 0;
     public int maxJitt = 800;
-    public int lossThreshold = 90;
+    public int lossThreshold = 90;*/
     public bool conected;
     public float pingInterval = 3.0f;
     public float timeout = 20.0f;
@@ -55,11 +55,11 @@ public class ClientGame : MonoBehaviour
         client = new NetworkingClient();
         gamePlayers = new Dictionary<ushort, ClientSideData>();
 
-        client.jitter = jitter;
+        /*client.jitter = jitter;
         client.packetLoss = packetLoss;
         client.minJitt = minJitt;
         client.maxJitt = maxJitt;
-        client.lossThreshold = lossThreshold;
+        client.lossThreshold = lossThreshold;*/
         client.Start();
     }
     
@@ -67,10 +67,10 @@ public class ClientGame : MonoBehaviour
     {
         //waitConnectionScreen.SetActive(true);
         timestamp = DateTime.Now;
-        client.InitClient(GLOBALS.IP);
+        client.InitClient(GLOBALS.roomName);
+        waitConnectionScreen.SetActive(true);
         winScreen.SetActive(false);
-        defeatScreen.SetActive(false);
-        StartConnection();
+        defeatScreen.SetActive(false);       
         Debug.Log("Client game start");
     }
 
@@ -109,6 +109,7 @@ public class ClientGame : MonoBehaviour
     {
         return client;
     }
+
 
     public void ProcessPacket(Packet pak)
     {
@@ -162,6 +163,7 @@ public class ClientGame : MonoBehaviour
                             GameObject go = GLOBALS.networkGO.SpawnGo(0, tankID, pos, rot);
                             go.GetComponent<TankController>().locked = true;
                             go.GetComponent<TankController>().SetCanonID(canonID);
+                            go.GetComponent<TankController>().SetColor(userColor);
                             client.ToSendPacket(ServerMSG.SM_CLIENT_READY, true);
                             conected = true;
                             client.connected = true;
@@ -213,7 +215,7 @@ public class ClientGame : MonoBehaviour
                         GameObject TempGo = GLOBALS.networkGO.SpawnGo(0, TempTankID, TempPos, TempRot);
                         TempGo.GetComponent<TankController>().locked = true;
                         TempGo.GetComponent<TankController>().SetCanonID(TempCannonID);
-
+                        TempGo.GetComponent<TankController>().SetColor(TempColor);
                         waitScript.AddPlayer();
                     }
                     break;
@@ -251,6 +253,12 @@ public class ClientGame : MonoBehaviour
                 case ClientMSG.CM_WINNER:
                     GLOBALS.playerTank.locked = true;
                     winScreen.SetActive(true);
+                    break;
+
+                case ClientMSG.CM_SAVE_SERVER:
+                    Debug.Log("Server recon");
+                    client.SetServer(pak.sender);                  
+                    StartConnection();
                     break;
 
                 default:

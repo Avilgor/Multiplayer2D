@@ -99,7 +99,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifetime: 3
-  shellSpeed: 4
+  shellSpeed: 15
 --- !u!114 &7755482923555184502
 MonoBehaviour:
   m_ObjectHideFlags: 0

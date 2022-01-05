@@ -6,6 +6,7 @@ using System;
 
 public class ServerClient
 {
+    public bool host;
     public ushort id;
     public bool defeated;
     public uint expectedID;
@@ -28,6 +29,7 @@ public class ServerClient
         ep = endPoint;
         username = name;
         expectedID = 0;
+        host = false;
         packetsACK = new Queue<uint>();
     }
 

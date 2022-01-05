@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Net;
-using System;
 
 public struct InputInfo
 {
@@ -42,10 +41,12 @@ public struct InputInfo
 
 public static class GLOBALS 
 {
-    public static bool isclient;
-    public static string IP = "";
+    public static bool isclient = true;
+    public static string roomName = "";
     public static string username = "";
-   
+    public static string matchmakingServerIP = "3.120.191.1";
+    public static int matchmakingServerPort = 9999;
+
     public static ClientGame clientGame = null;
     public static ServerGame serverGame = null;
     public static NetworkGameobjects networkGO = null;

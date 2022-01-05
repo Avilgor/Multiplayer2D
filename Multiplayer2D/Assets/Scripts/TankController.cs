@@ -15,17 +15,22 @@ public class TankController : MonoBehaviour
     public Transform shootPoint;
     public ParticleSystem explosionFX;
     public GameObject tankBody;
+    public SpriteRenderer bodySprite, cannonSprite;
     NetworkEntity entity;
     AudioSource source;
     bool shootReady;
     bool[] inputs;
-    //Rigidbody2D rb;
+    bool client;
+    bool destroyed;
+    Rigidbody2D rb;
+    
     //float mov = 0;
     //float rot = 0;
 
     private void Awake()
     {
-        //rb = GetComponent<Rigidbody2D>();
+        client = GLOBALS.isclient;
+        rb = GetComponent<Rigidbody2D>();
         entity = GetComponent<NetworkEntity>();
         source = GetComponent<AudioSource>();
     }
@@ -33,68 +38,116 @@ public class TankController : MonoBehaviour
     void Start()
     {
         shootReady = true;
+        destroyed = false;
     }
 
     void Update()
-    {       
+    {
         if (locked) return;
         bool gotInput = false;
         inputs = new bool[16];
         //mov = 0;
         //rot = 0;
-
+        Vector2 res;
         if (Input.GetKey(KeyCode.W))
         {
-            //transform.position = transform.position + (transform.up * (speed / 100));
             //Vector2 res = transform.up * (speed / 100);
             //rb.position += res;
-            inputs[(int)PlayerInputsENUM.INPUT_MOVE_FRONT] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_MOVE_FRONT] = true;
+                gotInput = true;
+            }
+            else
+            {
+                //transform.position = transform.position + (transform.up * speed * Time.deltaTime);
+                res = transform.up * speed * Time.deltaTime;
+                rb.position += res;
+            }
         }
 
         if (Input.GetKey(KeyCode.S))
         {
-            //transform.position = transform.position + (transform.up * (-speed / 100));
             //Vector2 res = transform.up * (-speed / 100);
             //rb.position += res;
-            inputs[(int)PlayerInputsENUM.INPUT_MOVE_BACK] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_MOVE_BACK] = true;
+                gotInput = true;
+            }
+            else
+            {
+                //transform.position = transform.position + (transform.up * (-speed) * Time.deltaTime);
+                res = transform.up * -speed * Time.deltaTime;
+                rb.position += res;
+            }
         }
 
         if (Input.GetKey(KeyCode.A))
         {
-            //transform.Rotate(new Vector3(0, 0, turnSpeed / 100));
             //rb.rotation += turnSpeed / 100;
-            inputs[(int)PlayerInputsENUM.INPUT_ROTATE_LEFT] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_ROTATE_LEFT] = true;
+                gotInput = true;
+            }
+            else
+            {
+                //transform.Rotate(new Vector3(0, 0, turnSpeed * Time.deltaTime));
+                rb.rotation += (turnSpeed * Time.deltaTime);
+            }
         }
 
         if (Input.GetKey(KeyCode.D))
         {
-            //transform.Rotate(new Vector3(0, 0, -turnSpeed / 100));
             //rb.rotation += -turnSpeed / 100;
-            inputs[(int)PlayerInputsENUM.INPUT_ROTATE_RIGHT] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_ROTATE_RIGHT] = true;
+                gotInput = true;
+            }
+            else
+            {
+                //transform.Rotate(new Vector3(0, 0, -turnSpeed * Time.deltaTime));
+                rb.rotation += (-turnSpeed * Time.deltaTime);
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            inputs[(int)PlayerInputsENUM.INPUT_SHOOT] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_SHOOT] = true;
+                gotInput = true;
+            }
+            else HostTankShoot();
+            
         }
 
         if (Input.GetKey(KeyCode.K))
         {
-            //cannon.Rotate(new Vector3(0, 0, cannonSpeed / 100));
-            inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT] = true;
+                gotInput = true;
+            }
+            else
+            {
+                cannon.Rotate(new Vector3(0, 0, cannonSpeed * Time.deltaTime));
+            }
         }
 
         if (Input.GetKey(KeyCode.L))
         {
-            //cannon.Rotate(new Vector3(0, 0, -cannonSpeed / 100));
-            inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT] = true;
-            gotInput = true;
+            if (client)
+            {
+                inputs[(int)PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT] = true;
+                gotInput = true;
+            }
+            else
+            {
+                cannon.Rotate(new Vector3(0, 0, -cannonSpeed * Time.deltaTime));
+            }
         }
 
         //if (mov != 0) transform.position = transform.position + (transform.up * mov);
@@ -123,7 +176,7 @@ public class TankController : MonoBehaviour
             gotInput = true;
         }*/
 
-        if (gotInput) GLOBALS.playerActions.NewInput(entity.netID, inputs, transform.position, transform.rotation);
+        if (gotInput && client) GLOBALS.playerActions.NewInput(entity.netID, inputs, transform.position, transform.rotation);
     }
 
     public void SetCanonID(uint id)
@@ -189,6 +242,27 @@ public class TankController : MonoBehaviour
         if (rot != 0) rb.rotation += rot; 
     }*/
 
+    private void HostTankShoot()
+    {
+        if (shootReady)
+        {
+            shootReady = false;
+            StartCoroutine(ShootReload());
+
+            uint id = GLOBALS.serverGame.GetNewNetID();
+            GLOBALS.networkGO.SpawnGo(1, id, shootPoint.position, shootPoint.rotation);
+            Packet pak = new Packet();
+            pak.Write(entity.netID);
+            pak.Write((byte)ClientActions.ACTION_SHOOT);
+            pak.Write(transform.position);
+            pak.Write(transform.rotation);
+            pak.Write(cannon.position);
+            pak.Write(cannon.rotation);
+            pak.Write(id);
+            GLOBALS.serverGame.BroadcastPacket(pak, ClientMSG.CM_CLIENT_ACTION, true);
+        }
+    }
+
     private void ServerShoot()
     {
         if (shootReady)
@@ -211,35 +285,35 @@ public class TankController : MonoBehaviour
 
     public void PerformAction(PlayerInputsENUM input)
     {
-        //Vector2 res;
+        Vector2 res;
         switch (input)
         {
             case PlayerInputsENUM.INPUT_SHOOT:
-                ServerShoot();
+                if(!destroyed) ServerShoot();
                 break;
             case PlayerInputsENUM.INPUT_ROTATE_RIGHT:
-                transform.Rotate(new Vector3(0, 0, -turnSpeed / 100));
-                //rb.rotation += (-turnSpeed / 100);
+                //transform.Rotate(new Vector3(0, 0, -turnSpeed * Time.deltaTime));
+                rb.rotation += (-turnSpeed * Time.deltaTime);
                 break;
             case PlayerInputsENUM.INPUT_ROTATE_LEFT:
-                transform.Rotate(new Vector3(0, 0, turnSpeed / 100));
-                //rb.rotation += (turnSpeed / 100);
+                //transform.Rotate(new Vector3(0, 0, turnSpeed * Time.deltaTime));
+                rb.rotation += (turnSpeed * Time.deltaTime);
                 break;
             case PlayerInputsENUM.INPUT_MOVE_FRONT:
-                transform.position = transform.position + (transform.up * (speed / 100));
-                //res = transform.up * speed / 100;
-                //rb.position += res;
+                //transform.position = transform.position + (transform.up * speed * Time.deltaTime);
+                res = transform.up * speed * Time.deltaTime;
+                rb.position += res;
                 break;
             case PlayerInputsENUM.INPUT_MOVE_BACK:
-                transform.position = transform.position + (transform.up * (-speed / 100));
-                //res = transform.up * -speed / 100;
-                //rb.position += res;
+                //transform.position = transform.position + (transform.up * (-speed) * Time.deltaTime);
+                res = transform.up * -speed * Time.deltaTime;
+                rb.position += res;
                 break;
             case PlayerInputsENUM.INPUT_CANNON_ROTATE_RIGHT:
-                cannon.Rotate(new Vector3(0, 0, -cannonSpeed / 100));
+                cannon.Rotate(new Vector3(0, 0, -cannonSpeed * Time.deltaTime));
                 break;
             case PlayerInputsENUM.INPUT_CANNON_ROTATE_LEFT:
-                cannon.Rotate(new Vector3(0, 0, cannonSpeed / 100));
+                cannon.Rotate(new Vector3(0, 0, cannonSpeed * Time.deltaTime));
                 break;
             default:
                 break;
@@ -299,6 +373,7 @@ public class TankController : MonoBehaviour
         transform.position = pos;
         transform.rotation = rot;
         tankBody.SetActive(true);
+        destroyed = false;
     }
 
     public void TankDestroyed(Vector3 pos, Quaternion rot)
@@ -308,6 +383,7 @@ public class TankController : MonoBehaviour
         PlayDestroyedFX();
         explosionFX.Play();
         tankBody.SetActive(false);
+        destroyed = true;
     }
 
     public void PlayShotFX()
@@ -318,6 +394,12 @@ public class TankController : MonoBehaviour
     public void PlayDestroyedFX()
     {
         source.PlayOneShot(tankExplosion);   
+    }
+
+    public void SetColor(Color co)
+    {
+        bodySprite.color = co;
+        cannonSprite.color = co;
     }
 
     public void TakeDamage()

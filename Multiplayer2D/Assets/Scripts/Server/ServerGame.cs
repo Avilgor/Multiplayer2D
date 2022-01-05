@@ -11,18 +11,20 @@ public class ServerGame : MonoBehaviour
 {
     public List<Transform> freeSpawns,usedSpwans;
     public ClientWait waitScript;
+    public GameObject winScreen, defeatScreen;
     public int maxClients = 10;
     public ushort clientIDs;
     public int timeout = 20;
     public int pingMS = 2000;
-    public bool jitter = true;
+    /*public bool jitter = true;
     public bool packetLoss = true;
     public int minJitt = 0;
     public int maxJitt = 800;
-    public int lossThreshold = 10;
+    public int lossThreshold = 10;*/
     public float updateWorldTime = 0.05f;
     public int secondsToStartGame = 11;
     public int maxEntityUpdatePacket = 30;
+    public CameraFollow camera;
 
     ActionManager actManager;
     NetworkingServer server;
@@ -49,17 +51,19 @@ public class ServerGame : MonoBehaviour
         usedColors = new List<Color>();
         freeColors = new List<Color>();
         toRemoveClients = new Queue<ServerClient>();
-        server.maxJitt = maxJitt;
+        /*server.maxJitt = maxJitt;
         server.minJitt = minJitt;
         server.lossThreshold = lossThreshold;
         server.jitter = jitter;
-        server.packetLoss = packetLoss;
+        server.packetLoss = packetLoss;*/
         server.Start();       
     }
 
     void Start()
     {
         waitScript.StartServer();
+        winScreen.SetActive(false);
+        defeatScreen.SetActive(false);
         for (int i = 0; i < 20; i++)
         {
             freeColors.Add(new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f)));
@@ -67,6 +71,7 @@ public class ServerGame : MonoBehaviour
         server.InitServer();
         StartCoroutine(PingCountdown());
         StartCoroutine(UpdateWorldTimer());
+        CreateServerTank();
         Debug.Log("Server game start");
     }
 
@@ -231,11 +236,6 @@ public class ServerGame : MonoBehaviour
                                     if (clients.Count >= 2) StartCoroutine(CountdownToStart());
                                 }
                             }
-                            /*else
-                            {
-                                //ServerFull
-                                server.ToSendPacket(ClientMSG.CM_ERROR_SERVER_FULL, data.sender,true);
-                            }*/
                         }
                     }
                     data = null;
@@ -248,6 +248,27 @@ public class ServerGame : MonoBehaviour
         }
     }
 
+    private void CreateServerTank()
+    {
+        uint tankID = GetNewNetID();
+        uint canonID = GetNewNetID();
+        string name = GLOBALS.username;
+        int col = UnityEngine.Random.Range(0, freeColors.Count);
+        Color co = freeColors[col];
+        usedColors.Add(co);
+        freeColors.RemoveAt(col);
+        ServerClient newC = new ServerClient(clientIDs, name, co, server.localEP);
+        GameObject go = CreatePlayerEntity(newC, tankID, canonID);
+        GLOBALS.playerTank = go.GetComponent<TankController>();
+        go.GetComponent<TankController>().locked = true;
+        GLOBALS.playerTank.SetColor(co);
+        newC.host = true;
+        clients.Add(newC.ep, newC);
+        waitScript.AddPlayer();
+        camera.target = go.transform;
+        clientIDs++;
+    }
+
     private GameObject CreatePlayerEntity(ServerClient player,uint tankID,uint cannonID)
     {
         Transform t = freeSpawns[UnityEngine.Random.Range(0,freeSpawns.Count)];
@@ -258,6 +279,7 @@ public class ServerGame : MonoBehaviour
         go.GetComponent<TankController>().locked = true;
         go.GetComponent<TankController>().SetCanonID(cannonID);
         player.clientTank = go.GetComponent<NetworkEntity>();
+        go.GetComponent<TankController>().SetColor(player.col);
         return go;
     }
 
@@ -322,8 +344,13 @@ public class ServerGame : MonoBehaviour
         //Send to all except server client
         foreach(KeyValuePair<IPEndPoint, ServerClient> player in clients)
         {
-            server.ToSendPacket(pak.ToArray(), msg, player.Value,esential);
+            if(!player.Value.host) server.ToSendPacket(pak.ToArray(), msg, player.Value,esential);
         }
+    }
+
+    public NetworkingServer GetServer()
+    {
+        return server;
     }
 
     public void BroadcastPacket(ClientMSG msg, bool esential)
@@ -381,7 +408,12 @@ public class ServerGame : MonoBehaviour
         Packet pak = new Packet();
         pak.Write(clients[player].clientTank.netID);
         BroadcastPacket(pak,ClientMSG.CM_DESTROY_GO,true);
-        server.ToSendPacket(ClientMSG.CM_DEFEATED,clients[player],true);
+        if (clients[player].host)
+        {
+            defeatScreen.SetActive(false);
+            GLOBALS.playerTank.locked = true;
+        }
+        else server.ToSendPacket(ClientMSG.CM_DEFEATED,clients[player],true);
         if (currentPlayers == 1)
         {
             //Got winner
@@ -389,7 +421,13 @@ public class ServerGame : MonoBehaviour
             {
                 if (!client.Value.defeated)
                 {
-                    server.ToSendPacket(ClientMSG.CM_WINNER, client.Value, true);
+                    if (!client.Value.host) server.ToSendPacket(ClientMSG.CM_WINNER, client.Value, true);
+                    else
+                    {
+                        GLOBALS.playerTank.locked = true;
+                        winScreen.SetActive(true);
+                    }
+                    
                     StartCoroutine(AutoDisconnect());
                     break;
                 }
@@ -409,6 +447,7 @@ public class ServerGame : MonoBehaviour
         StartCoroutine(RemoveClient(data.sender));
         server.connectedClients.Remove(data.sender);
         GLOBALS.networkGO.DestroyGo(clients[data.sender].clientTank.netID);
+        waitScript.RemovePlayer();
     }
 
     private void DisconnectClient(ServerClient player)
@@ -434,14 +473,17 @@ public class ServerGame : MonoBehaviour
             {
                 foreach (KeyValuePair<IPEndPoint, ServerClient> client in clients)
                 {
-                    TimeSpan diff = DateTime.Now - client.Value.lastTimestamp;
-                    if (diff.TotalSeconds > timeout) //Disconnect client if more than timeout
+                    if (!client.Value.host)
                     {
-                        toRemoveClients.Enqueue(client.Value);
-                    }
-                    else //Send ping
-                    {
-                        server.ToSendPacket(ClientMSG.CM_PING, client.Value, false);
+                        TimeSpan diff = DateTime.Now - client.Value.lastTimestamp;
+                        if (diff.TotalSeconds > timeout) //Disconnect client if more than timeout
+                        {
+                            toRemoveClients.Enqueue(client.Value);
+                        }
+                        else //Send ping
+                        {
+                            server.ToSendPacket(ClientMSG.CM_PING, client.Value, false);
+                        }
                     }
                 }
             }
@@ -490,6 +532,13 @@ public class ServerGame : MonoBehaviour
         }      
     }
 
+    public void DisconnectHost()
+    {
+        BroadcastPacket(ClientMSG.CM_CLIENT_DISCONNECTED, false);
+        server.onDisconnect();
+        SceneManager.LoadScene(0);
+    }
+
     IEnumerator RemoveClient(IPEndPoint player)
     {
         yield return new WaitForSeconds(1);
@@ -517,6 +566,7 @@ public class ServerGame : MonoBehaviour
             BroadcastPacket(ClientMSG.CM_GAME_START,true);
             currentPlayers = clients.Count;
             waitScript.StartGame();
+            GLOBALS.playerTank.locked = false;
         }
     }
 

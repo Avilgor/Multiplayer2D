@@ -5036,14 +5036,16 @@ MonoBehaviour:
   tankExplosion: {fileID: 8300000, guid: e39f3fce2861a024e88c87773cd7a750, type: 3}
   tankShot: {fileID: 8300000, guid: 56b5fa2b4cdd77e469064419efb161e1, type: 3}
   locked: 0
-  speed: 5
-  turnSpeed: 110
-  cannonSpeed: 120
+  speed: 3
+  turnSpeed: 80
+  cannonSpeed: 70
   shootCD: 2
   cannon: {fileID: 4136443940336710133}
   shootPoint: {fileID: 4136443941300423536}
   explosionFX: {fileID: 6302452210996872721}
   tankBody: {fileID: 4136443941998494638}
+  bodySprite: {fileID: 4136443941998494636}
+  cannonSprite: {fileID: 4136443941987595226}
 --- !u!50 &5647893794740537168
 Rigidbody2D:
   serializedVersion: 4
@@ -5396,7 +5398,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: 63e19e295f741174f98649311d2dba9c, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.7
+  m_Volume: 0.3
   m_Pitch: 1
   Loop: 1
   Mute: 0

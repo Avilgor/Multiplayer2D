@@ -6,8 +6,8 @@ using TMPro;
 
 public class Menu : MonoBehaviour
 {
-    public GameObject joinScreen;
-    public TMP_InputField usernameJoin,joinIp;
+    public GameObject joinScreen,hostScreen;
+    public TMP_InputField usernameJoin,roomJoin,userHost,roomHost;
 
     private void Awake()
     {
@@ -16,8 +16,9 @@ public class Menu : MonoBehaviour
 
     void Start()
     {
-        usernameJoin.text = "player";
-        joinIp.text = "127.0.0.1";
+        GLOBALS.isclient = true;
+        usernameJoin.text = userHost.text = "Player";
+        roomJoin.text = roomHost.text = "MyRoom";
         joinScreen.SetActive(false);
     }
 
@@ -36,16 +37,32 @@ public class Menu : MonoBehaviour
         joinScreen.SetActive(false);
     }
 
+    public void OpenHost()
+    {
+        hostScreen.SetActive(true);
+    }
+
+    public void CloseHost()
+    {
+        hostScreen.SetActive(false);
+    }
+
     public void StartHost()
-    {      
-        SceneManager.LoadScene(1);
+    {
+        if (!string.IsNullOrWhiteSpace(userHost.text) && !string.IsNullOrWhiteSpace(roomHost.text))
+        {
+            GLOBALS.isclient = false;
+            GLOBALS.roomName = roomHost.text;
+            GLOBALS.username = userHost.text;
+            SceneManager.LoadScene(1);
+        }
     }
 
     public void StartJoin()
     {
-        if (!string.IsNullOrWhiteSpace(usernameJoin.text) && !string.IsNullOrWhiteSpace(joinIp.text))
+        if (!string.IsNullOrWhiteSpace(usernameJoin.text) && !string.IsNullOrWhiteSpace(roomJoin.text))
         {
-            GLOBALS.IP = joinIp.text;
+            GLOBALS.roomName = roomJoin.text;
             GLOBALS.username = usernameJoin.text;
             SceneManager.LoadScene(2);
         }

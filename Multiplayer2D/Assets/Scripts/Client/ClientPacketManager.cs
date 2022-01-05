@@ -23,6 +23,7 @@ public enum ClientMSG : byte
     CM_COUNTDOWN,
     CM_DEFEATED,
     CM_WINNER,
+    CM_SAVE_SERVER,
     CM_MAX
 }
 
@@ -78,17 +79,44 @@ public class ClientPacketManager : MonoBehaviour
 
     public void GotPacket(Packet pak)
     {
-        pak.ReadID();//pak id
-        if (pak.pakID >= expectedID)
+        if (pak.externalServer)
         {
-            receivedPackets.Enqueue(pak);
-            acks.Enqueue(pak.pakID);
-            expectedID = pak.pakID + 1;
+            //From matchmaking server
+            NetworkingClient client = GLOBALS.clientGame.GetClient();
+
+            byte[] buffer = pak.ReadBytes(pak.size);
+            string s = System.Text.Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+            string[] splitClients = s.Split('|');
+            string ip;
+            int port;
+            string[] clientInfo;
+            for (int i = 0; i < splitClients.Length; i++)
+            {
+                clientInfo = splitClients[i].Split(':');
+                ip = clientInfo[0];
+                port = Int32.Parse(clientInfo[1]);
+                /*if (ip.Equals(client.localPublicIP))
+                {
+                    //Same net, check port
+                    if (port != client.GetLocalPort()) client.NATHolePunch(ip, port);
+                }
+                else */client.NATHolePunch(ip, port);
+            }
         }
-        else if ((ClientMSG)pak.ReadByte(false) == ClientMSG.CM_ACK)
+        else
         {
-            receivedPackets.Enqueue(pak);
-            acks.Enqueue(pak.pakID);
+            pak.ReadID();//pak id
+            if (pak.pakID >= expectedID)
+            {
+                receivedPackets.Enqueue(pak);
+                acks.Enqueue(pak.pakID);
+                expectedID = pak.pakID + 1;
+            }
+            else if ((ClientMSG)pak.ReadByte(false) == ClientMSG.CM_ACK)
+            {
+                receivedPackets.Enqueue(pak);
+                acks.Enqueue(pak.pakID);
+            }
         }
     }
 

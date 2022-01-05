@@ -57,24 +57,51 @@ public class ServerPacketManager : MonoBehaviour
 
     public void GotPacket(Packet pak)
     {
-        pak.ReadID();
-
-        if (receivedPackets.Count > 100) receivedPackets.Dequeue();
-
-        ServerClient client = server.GetClient(pak.sender);
-        if (client != null)
+        //Debug.Log(pak.ToStringBitArray());
+        if (pak.externalServer)
         {
-            client.lastTimestamp = DateTime.Now;
-            if (pak.pakID >= client.expectedID)
+            NetworkingServer server = GLOBALS.serverGame.GetServer();
+            //From matchmaking server
+            byte[] buffer = pak.ReadBytes(pak.size);
+            string s = System.Text.Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+            string[] splitClients = s.Split('|');
+            string ip;
+            int port;
+            string[] clientInfo;
+            for (int i = 0;i< splitClients.Length;i ++)
+            {
+                clientInfo = splitClients[i].Split(':');
+                ip = clientInfo[0];
+                port = Int32.Parse(clientInfo[1]);
+                /*if (ip.Equals(server.localPublicIP))
+                {
+                    //Same net, check port
+                    if (port != server.GetLocalPort()) server.NATHolePunch(ip, port);
+                }
+                else */server.NATHolePunch(ip, port);
+            }          
+        }
+        else
+        {
+            pak.ReadID();
+
+            if (receivedPackets.Count > 100) receivedPackets.Dequeue();
+
+            ServerClient client = server.GetClient(pak.sender);
+            if (client != null)
+            {
+                client.lastTimestamp = DateTime.Now;
+                if (pak.pakID >= client.expectedID)
+                {
+                    receivedPackets.Enqueue(pak);
+                    client.packetsACK.Enqueue(pak.pakID);
+                    client.expectedID = pak.pakID + 1;
+                }
+            }
+            else if ((ServerMSG)pak.ReadByte(false) == ServerMSG.SM_CLIENT_CONNECTION)
             {
                 receivedPackets.Enqueue(pak);
-                client.packetsACK.Enqueue(pak.pakID);
-                client.expectedID = pak.pakID + 1;
             }
-        }
-        else if((ServerMSG)pak.ReadByte(false) == ServerMSG.SM_CLIENT_CONNECTION)
-        {
-            receivedPackets.Enqueue(pak);           
         }
     }
 

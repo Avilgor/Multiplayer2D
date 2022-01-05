@@ -11,6 +11,7 @@ using System.Net;
 public class Packet 
 {
     public bool esential;
+    public bool externalServer = false;
     public DateTime timestamp;
     public IPEndPoint sender = null;
     public IPEndPoint remote = null;
@@ -19,6 +20,7 @@ public class Packet
     private List<byte> buffer;
     private byte[] readableBuffer;
     private int readPos;
+    public int size;
 
     //Creates a new packet without an ID
     public Packet(bool es = false)
@@ -143,6 +145,12 @@ public class Packet
     public bool HasBufer()
     {
         if (readableBuffer != null && readableBuffer.Length > 0) return true;
+        else return false;
+    }
+
+    public bool AllRead()
+    {
+        if (readPos >= size) return true;
         else return false;
     }
 
