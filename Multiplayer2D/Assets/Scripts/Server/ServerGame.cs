@@ -89,7 +89,7 @@ public class ServerGame : MonoBehaviour
             UpdateWorldState();
         }
         if (sendPing) PingClients();
-        if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
+        if (Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
     }
 
     private void OnDestroy()

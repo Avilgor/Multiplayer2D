@@ -93,7 +93,7 @@ public class ClientGame : MonoBehaviour
             client.onDisconnect();
             DisconnectedFromServer();
         }     
-        if(Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
+        if(Input.GetKeyDown(KeyCode.Escape)) SceneManager.LoadScene(0);
     }
 
     private void StartConnection()

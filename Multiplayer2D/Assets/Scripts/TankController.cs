@@ -196,7 +196,7 @@ public class TankController : MonoBehaviour
 
     public bool Canshoot()
     {
-        return shootReady;
+        return shootReady && !destroyed;
     }
 
     /*public Rigidbody2D GetRigidbody()
@@ -248,7 +248,7 @@ public class TankController : MonoBehaviour
         {
             shootReady = false;
             StartCoroutine(ShootReload());
-
+            PlayShotFX();
             uint id = GLOBALS.serverGame.GetNewNetID();
             GLOBALS.networkGO.SpawnGo(1, id, shootPoint.position, shootPoint.rotation);
             Packet pak = new Packet();
@@ -264,19 +264,12 @@ public class TankController : MonoBehaviour
     }
 
     private void ServerShoot()
-    {
-        if (shootReady)
-        {        
-            shootReady = false;
-            StartCoroutine(ShootReload());
-        }
+    {              
+        shootReady = false;
+        PlayShotFX();
+        StartCoroutine(ShootReload());
     }
 
-    public void ClientShoot()
-    {       
-        //Particles FX
-
-    }
 
     public Transform GetShootPoint()
     {

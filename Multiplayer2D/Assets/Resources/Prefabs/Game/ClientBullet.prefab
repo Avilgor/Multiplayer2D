@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 2171122898798672387}
   - component: {fileID: 2171122898798672386}
   - component: {fileID: 2171122898798672388}
-  - component: {fileID: 7428661704234700289}
   - component: {fileID: 4982842927287102011}
   m_Layer: 0
   m_Name: ClientBullet
@@ -102,19 +101,6 @@ MonoBehaviour:
   lockRotation: 0
   lockScale: 0
   interpolationDuration: 0.1
---- !u!114 &7428661704234700289
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2171122898798672391}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1b963d315c140f4c8eb28f20b6a0d39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  explosionFX: {fileID: 8300000, guid: 3dc7c4e4b9fb60f44838f1389ef563cf, type: 3}
 --- !u!82 &4982842927287102011
 AudioSource:
   m_ObjectHideFlags: 0
@@ -126,7 +112,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0

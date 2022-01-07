@@ -6,6 +6,13 @@ public class Bullet : MonoBehaviour
 {
     public float lifetime = 3.0f;
     public float shellSpeed = 1.0f;
+    public AudioClip explosionFX;
+    AudioSource source;
+
+    private void Awake()
+    {
+        source = GetComponent<AudioSource>();
+    }
 
     void Start()
     {
@@ -19,6 +26,7 @@ public class Bullet : MonoBehaviour
 
     public void DestroyBullet()
     {
+        source.PlayOneShot(explosionFX);
         GLOBALS.networkGO.DestroyGo(GetComponent<NetworkEntity>().netID);
         Packet pak = new Packet();
         pak.Write(GetComponent<NetworkEntity>().netID);
@@ -27,10 +35,10 @@ public class Bullet : MonoBehaviour
 
     public void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.tag == "Tank")
+        DestroyBullet();
+        if (collision.gameObject.tag == "Tank")
         {
             collision.gameObject.GetComponent<TankController>().TakeDamage();
-            DestroyBullet();
         }
     }
 
